@@ -92,12 +92,30 @@ def lookup_plate(text: str) -> str:
     return f"🚗 {text.strip()}\nBu avtomobil barədə bazada məlumat tapılmadı."
 
 
+
 async def send_message(to: str, text: str):
     url = f"https://graph.facebook.com/{env('META_API_VERSION')}/{env('WHATSAPP_PHONE_NUMBER_ID')}/messages"
-    payload = {"messaging_product": "whatsapp", "recipient_type": "individual", "to": to, "type": "text", "text": {"preview_url": False, "body": text[:4096]}}
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to,
+        "type": "text",
+        "text": {"preview_url": False, "body": text[:4096]},
+    }
     async with httpx.AsyncClient(timeout=20) as client:
-        resp = await client.post(url, headers={"Authorization": f"Bearer {env('WHATSAPP_ACCESS_TOKEN')}"}, json=payload)
+        resp = await client.post(
+            url,
+            headers={"Authorization": f"Bearer {env('WHATSAPP_ACCESS_TOKEN')}"},
+            json=payload,
+        )
+        if resp.is_error:
+            logging.error(
+                "WhatsApp API error: status=%s body=%s",
+                resp.status_code,
+                resp.text,
+            )
         resp.raise_for_status()
+
 
 
 async def process_event(event: dict):
